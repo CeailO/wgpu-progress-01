@@ -2,13 +2,13 @@ use std::iter::once;
 use std::path::PathBuf;
 
 use wgpu::{
-    Backends, BlendState, Color, ColorTargetState, ColorWrites, CommandEncoderDescriptor, Device,
-    DeviceDescriptor, Dx12Compiler, Face, Features, FragmentState, FrontFace, Instance,
-    InstanceDescriptor, Limits, MultisampleState, Operations, PipelineLayoutDescriptor,
-    PolygonMode, PowerPreference, PrimitiveState, PrimitiveTopology, Queue,
-    RenderPassColorAttachment, RenderPassDescriptor, RenderPipeline, RenderPipelineDescriptor,
-    RequestAdapterOptions, ShaderModuleDescriptor, Surface, SurfaceConfiguration, SurfaceError,
-    TextureUsages, TextureViewDescriptor, VertexState,
+    Backends, BlendComponent, BlendState, Color, ColorTargetState, ColorWrites,
+    CommandEncoderDescriptor, Device, DeviceDescriptor, Dx12Compiler, Face, Features,
+    FragmentState, FrontFace, IndexFormat, Instance, InstanceDescriptor, Limits, MultisampleState,
+    Operations, PipelineLayoutDescriptor, PolygonMode, PowerPreference, PrimitiveState,
+    PrimitiveTopology, Queue, RenderPassColorAttachment, RenderPassDescriptor, RenderPipeline,
+    RenderPipelineDescriptor, RequestAdapterOptions, ShaderModuleDescriptor, Surface,
+    SurfaceConfiguration, SurfaceError, TextureUsages, TextureViewDescriptor, VertexState,
 };
 use winit::{
     dpi::PhysicalSize,
@@ -106,26 +106,21 @@ impl State {
                 buffers: &[],
             },
             primitive: PrimitiveState {
-                topology: PrimitiveTopology::TriangleList,
-                strip_index_format: None,
-                front_face: FrontFace::Ccw,
-                cull_mode: Some(Face::Back),
-                unclipped_depth: false,
-                polygon_mode: PolygonMode::Fill,
-                conservative: false,
+                topology: PrimitiveTopology::LineStrip, // LineList // Pointlist
+                strip_index_format: Some(IndexFormat::Uint32), // None // None
+                ..Default::default()
             },
             depth_stencil: None,
-            multisample: MultisampleState {
-                count: 1,
-                mask: !0,
-                alpha_to_coverage_enabled: false,
-            },
+            multisample: MultisampleState::default(),
             fragment: Some(FragmentState {
                 module: &shader,
                 entry_point: "fs_main",
                 targets: &[Some(ColorTargetState {
                     format: configuration.format,
-                    blend: Some(BlendState::REPLACE),
+                    blend: Some(BlendState {
+                        color: BlendComponent::REPLACE, //
+                        alpha: BlendComponent::REPLACE, //
+                    }),
                     write_mask: (ColorWrites::ALL),
                 })],
             }),
@@ -183,9 +178,9 @@ impl State {
                     resolve_target: None,
                     ops: Operations {
                         load: wgpu::LoadOp::Clear(Color {
-                            r: 0.1,
-                            g: 0.2,
-                            b: 0.3,
+                            r: 0.05,
+                            g: 0.062,
+                            b: 0.08,
                             a: 1.0,
                         }),
                         store: true,
@@ -195,7 +190,7 @@ impl State {
             });
             //
             render_pass.set_pipeline(&self.render_pipeline); // 2
-            render_pass.draw(0..3, 0..1) // 3
+            render_pass.draw(0..6, 0..6) // 3
         }
         self.queue.submit(once(encoder.finish()));
         output.present();
