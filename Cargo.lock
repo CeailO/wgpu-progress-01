@@ -1428,6 +1428,7 @@ name = "wgpu-progress-01"
 version = "0.1.0"
 dependencies = [
  "pollster",
+ "slotmap",
  "wgpu",
  "winit",
 ]
