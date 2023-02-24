@@ -11,8 +11,10 @@ fn vertex_shader_main(@builtin(vertex_index) in_vertex_index: u32) -> VertexOutp
         vec2<f32>(0.4, -0.5),
         vec2<f32>(-0.4, -0.4),
         vec2<f32>(-0.3, 0.2),
-    )
-    return vec4<f32>(pos[in_vertex_index], 0.0, 1.0);
+    );
+    var out: VertexOutput;
+    out.clip_position = vec4<f32>(pos[in_vertex_index], 0.0, 1.0);
+    return out;
 }
 
 @fragment
