@@ -106,8 +106,8 @@ impl State {
                 buffers: &[],
             },
             primitive: PrimitiveState {
-                topology: PrimitiveTopology::LineStrip, // LineList
-                strip_index_format: Some(IndexFormat::Uint32), // None
+                topology: PrimitiveTopology::LineStrip, // LineList // Pointlist
+                strip_index_format: Some(IndexFormat::Uint32), // None // None
                 ..Default::default()
             },
             depth_stencil: None,
