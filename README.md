@@ -5,18 +5,16 @@ I had thought to abandon ggez as for now.
 
 Todo!
 
-[x] Direct X 12
+- [x] Direct X 12
 
-[] Vulkan
+- [ ] Vulkan
 
-[] Metal
+- [ ] Metal
 
-~~[] Direct X 11 (abandoned)~~
+- [x] Wgsl shader and buffer
 
-[x] Wgsl shader and buffer
+- [ ] Documentation
 
-[] Documentation
-
-[] Learn damn math
+- [ ] Learn damn math
 
 Priority still will continue the rust-basic-101 for refreshing mind.
