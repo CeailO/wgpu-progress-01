@@ -2,19 +2,20 @@ use std::iter::once;
 use std::path::PathBuf;
 
 use wgpu::{
-    Backends, BlendState, Color, ColorTargetState, ColorWrites, CommandEncoderDescriptor,
-    DeviceDescriptor, Dx12Compiler, Face, Features, FragmentState, FrontFace, Instance, Limits,
-    MultisampleState, Operations, PipelineLayoutDescriptor, PolygonMode, PowerPreference,
-    PrimitiveState, PrimitiveTopology, RenderPassColorAttachment, RenderPassDescriptor,
-    RenderPipeline, RenderPipelineDescriptor, RequestAdapterOptions, ShaderModuleDescriptor,
-    SurfaceError, TextureUsages, TextureViewDescriptor, VertexState,
+    Backends, BlendState, Color, ColorTargetState, ColorWrites, CommandEncoderDescriptor, Device,
+    DeviceDescriptor, Dx12Compiler, Face, Features, FragmentState, FrontFace, Instance,
+    InstanceDescriptor, Limits, MultisampleState, Operations, PipelineLayoutDescriptor,
+    PolygonMode, PowerPreference, PrimitiveState, PrimitiveTopology, Queue,
+    RenderPassColorAttachment, RenderPassDescriptor, RenderPipeline, RenderPipelineDescriptor,
+    RequestAdapterOptions, ShaderModuleDescriptor, Surface, SurfaceConfiguration, SurfaceError,
+    TextureUsages, TextureViewDescriptor, VertexState,
 };
-use wgpu::{Device, InstanceDescriptor, Queue, Surface, SurfaceConfiguration};
-use winit::dpi::PhysicalSize;
-use winit::event::{Event, WindowEvent};
-use winit::event_loop::{ControlFlow, EventLoop};
-use winit::window::{Window, WindowBuilder};
-
+use winit::{
+    dpi::PhysicalSize,
+    event::{Event, WindowEvent},
+    event_loop::{ControlFlow, EventLoop},
+    window::{Window, WindowBuilder},
+};
 pub struct State {
     surface: Surface,
     device: Device,
