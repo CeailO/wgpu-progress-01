@@ -1,20 +1,19 @@
 use std::iter::once;
-use std::mem;
+
 use std::path::PathBuf;
 
 use bytemuck::cast_slice;
 use wgpu::{
     util::{BufferInitDescriptor, DeviceExt},
     Backends, BlendComponent, BlendState, Buffer, BufferUsages, Color, ColorTargetState,
-    ColorWrites, CommandEncoderDescriptor, Device, DeviceDescriptor, Dx12Compiler, Face, Features,
-    FragmentState, FrontFace, IndexFormat, Instance, InstanceDescriptor, Limits, MultisampleState,
-    Operations, PipelineLayoutDescriptor, PolygonMode, PowerPreference, PrimitiveState,
-    PrimitiveTopology, Queue, RenderPassColorAttachment, RenderPassDescriptor, RenderPipeline,
-    RenderPipelineDescriptor, RequestAdapterOptions, ShaderModuleDescriptor, Surface,
-    SurfaceConfiguration, SurfaceError, TextureUsages, TextureViewDescriptor, VertexBufferLayout,
-    VertexFormat, VertexState,
+    ColorWrites, CommandEncoderDescriptor, Device, DeviceDescriptor, Dx12Compiler, Features,
+    FragmentState, IndexFormat, Instance, InstanceDescriptor, Limits, MultisampleState, Operations,
+    PipelineLayoutDescriptor, PowerPreference, PrimitiveState, PrimitiveTopology, Queue,
+    RenderPassColorAttachment, RenderPassDescriptor, RenderPipeline, RenderPipelineDescriptor,
+    RequestAdapterOptions, ShaderModuleDescriptor, Surface, SurfaceConfiguration, SurfaceError,
+    TextureUsages, TextureViewDescriptor, VertexState,
 };
-use wgpu::{BufferAddress, VertexAttribute, VertexStepMode};
+
 use winit::{
     dpi::PhysicalSize,
     event::{Event, WindowEvent},
@@ -23,8 +22,6 @@ use winit::{
 };
 
 use crate::vertex_lib::vertex_lib::{Vertex, VERTICES};
-
-use super::vertex_lib;
 
 pub struct State {
     surface: Surface,
@@ -37,6 +34,7 @@ pub struct State {
     render_pipeline: RenderPipeline,
     // alt-3
     vertex_buffer: Buffer,
+    num_vertices: u32,
 }
 
 impl State {
@@ -101,6 +99,10 @@ impl State {
         surface.configure(&device, &configuration);
 
         // ----- CHANGES -----
+        let shader = device.create_shader_module(ShaderModuleDescriptor {
+            label: Some("Shader"),
+            source: wgpu::ShaderSource::Wgsl(include_str!("shader.wgsl").into()),
+        });
         // vertex buffer
         let vertex_buffer = device.create_buffer_init(&BufferInitDescriptor {
             label: Some("Vertex Buffer"),
@@ -143,6 +145,8 @@ impl State {
             }),
             multiview: None,
         });
+        //
+        let num_vertices = VERTICES.len() as u32;
 
         Self {
             surface,
@@ -155,6 +159,7 @@ impl State {
             render_pipeline,
             //
             vertex_buffer,
+            num_vertices,
         }
     }
 
@@ -210,7 +215,8 @@ impl State {
             });
             //
             render_pass.set_pipeline(&self.render_pipeline); // 2
-            render_pass.draw(0..6, 0..6) // 3
+            render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
+            render_pass.draw(0..self.num_vertices, 0..1) // 3
         }
         self.queue.submit(once(encoder.finish()));
         output.present();
