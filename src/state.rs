@@ -1,21 +1,31 @@
 use std::iter::once;
+use std::mem;
 use std::path::PathBuf;
 
+use bytemuck::cast_slice;
 use wgpu::{
-    Backends, BlendComponent, BlendState, Color, ColorTargetState, ColorWrites,
-    CommandEncoderDescriptor, Device, DeviceDescriptor, Dx12Compiler, Face, Features,
+    util::{BufferInitDescriptor, DeviceExt},
+    Backends, BlendComponent, BlendState, Buffer, BufferUsages, Color, ColorTargetState,
+    ColorWrites, CommandEncoderDescriptor, Device, DeviceDescriptor, Dx12Compiler, Face, Features,
     FragmentState, FrontFace, IndexFormat, Instance, InstanceDescriptor, Limits, MultisampleState,
     Operations, PipelineLayoutDescriptor, PolygonMode, PowerPreference, PrimitiveState,
     PrimitiveTopology, Queue, RenderPassColorAttachment, RenderPassDescriptor, RenderPipeline,
     RenderPipelineDescriptor, RequestAdapterOptions, ShaderModuleDescriptor, Surface,
-    SurfaceConfiguration, SurfaceError, TextureUsages, TextureViewDescriptor, VertexState,
+    SurfaceConfiguration, SurfaceError, TextureUsages, TextureViewDescriptor, VertexBufferLayout,
+    VertexFormat, VertexState,
 };
+use wgpu::{BufferAddress, VertexAttribute, VertexStepMode};
 use winit::{
     dpi::PhysicalSize,
     event::{Event, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
     window::{Window, WindowBuilder},
 };
+
+use crate::vertex_lib::vertex_lib::{Vertex, VERTICES};
+
+use super::vertex_lib;
+
 pub struct State {
     surface: Surface,
     device: Device,
@@ -25,6 +35,8 @@ pub struct State {
     window: Window,
     //
     render_pipeline: RenderPipeline,
+    // alt-3
+    vertex_buffer: Buffer,
 }
 
 impl State {
@@ -87,11 +99,15 @@ impl State {
             view_formats: vec![],
         };
         surface.configure(&device, &configuration);
-        //
-        let shader = device.create_shader_module(ShaderModuleDescriptor {
-            label: Some("Shader"),
-            source: wgpu::ShaderSource::Wgsl(include_str!("shader.wgsl").into()),
+
+        // ----- CHANGES -----
+        // vertex buffer
+        let vertex_buffer = device.create_buffer_init(&BufferInitDescriptor {
+            label: Some("Vertex Buffer"),
+            contents: cast_slice(VERTICES),
+            usage: BufferUsages::VERTEX,
         });
+        //
         let render_pipeline_layout = device.create_pipeline_layout(&PipelineLayoutDescriptor {
             label: Some("Render Pipeline Layout"),
             bind_group_layouts: &[],
@@ -103,7 +119,8 @@ impl State {
             vertex: VertexState {
                 module: &shader,
                 entry_point: "vertex_shader_main",
-                buffers: &[],
+                // buffer from vertex_buffer
+                buffers: &[Vertex::desc()],
             },
             primitive: PrimitiveState {
                 topology: PrimitiveTopology::LineStrip, // LineList // Pointlist
@@ -126,6 +143,7 @@ impl State {
             }),
             multiview: None,
         });
+
         Self {
             surface,
             device,
@@ -135,6 +153,8 @@ impl State {
             window,
             //
             render_pipeline,
+            //
+            vertex_buffer,
         }
     }
 
