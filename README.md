@@ -1,20 +1,10 @@
-# WGPU Progress
+# Primitive Points and Line
 
-I know that I'm the worst in turning project into some naming conventions. But alas, this is something I would like to dedicate myself to learn low-level api which sounding worth.
-I had thought to abandon ggez as for now.
+Notable Primitive Context
 
-Todo!
+    topology: PrimitiveTopology::LineStrip, // LineList // Pointlist
+    strip_index_format: Some(IndexFormat::Uint32), // None // None
 
-- [x] Direct X 12
+Render
 
-- [ ] Vulkan
-
-- [ ] Metal
-
-- [x] Wgsl shader and buffer
-
-- [ ] Documentation
-
-- [ ] Learn damn math
-
-Priority still will continue the rust-basic-101 for refreshing mind.
+    render_pass.draw(0..6, 0..6) // 3
