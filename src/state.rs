@@ -125,8 +125,8 @@ impl State {
                 buffers: &[Vertex::desc()],
             },
             primitive: PrimitiveState {
-                topology: PrimitiveTopology::LineStrip, // LineList // Pointlist
-                strip_index_format: Some(IndexFormat::Uint32), // None // None
+                topology: PrimitiveTopology::TriangleList, // LineList // Pointlist
+                strip_index_format: None, // None // None
                 ..Default::default()
             },
             depth_stencil: None,
