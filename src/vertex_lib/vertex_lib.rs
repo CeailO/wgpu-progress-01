@@ -14,7 +14,7 @@ pub struct Vertex {
 }
 
 // vertex as copy
-// vertices fcoordinate counter clockwise
+// vertices coordinate counter clockwise
 pub const VERTICES: &[Vertex] = &[
     Vertex {
         position: [0.0, 0.5, 0.0],
@@ -39,7 +39,7 @@ impl Vertex {
             attributes: &[
                 VertexAttribute {
                     offset: 0,                       // bytes start for vertex
-                    shader_location: 0, //location to store shader attributes. @location(0) x: vec<32> position Vertex @location(1) x:vec<32> color
+                    shader_location: 0, // location to store shader attributes. @location(0) x: vec<32> position Vertex @location(1) x:vec<32> color
                     format: VertexFormat::Float32x3, // shape of attribute
                 },
                 VertexAttribute {
