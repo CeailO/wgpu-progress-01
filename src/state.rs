@@ -21,7 +21,7 @@ use winit::{
     window::{Window, WindowBuilder},
 };
 
-use crate::vertex_lib::vertex_lib::{Vertex, VERTICES};
+use crate::vertex_lib::vertex_lib::{Vertex, INDICES, VERTICES};
 
 pub struct State {
     surface: Surface,
@@ -35,6 +35,9 @@ pub struct State {
     // alt-3
     vertex_buffer: Buffer,
     num_vertices: u32,
+    // alt-4
+    index_buffer: Buffer,
+    num_indices: u32,
 }
 
 impl State {
@@ -126,7 +129,7 @@ impl State {
             },
             primitive: PrimitiveState {
                 topology: PrimitiveTopology::TriangleList, // LineList // Pointlist
-                strip_index_format: None, // None // None
+                strip_index_format: None,                  // None // None
                 ..Default::default()
             },
             depth_stencil: None,
@@ -148,6 +151,14 @@ impl State {
         //
         let num_vertices = VERTICES.len() as u32;
 
+        // ----- CHANGES -----
+        let index_buffer = device.create_buffer_init(&BufferInitDescriptor {
+            label: Some("Index Buffer"),
+            contents: cast_slice(INDICES),
+            usage: BufferUsages::INDEX,
+        });
+        let num_indices = INDICES.len() as u32;
+
         Self {
             surface,
             device,
@@ -160,6 +171,8 @@ impl State {
             //
             vertex_buffer,
             num_vertices,
+            index_buffer,
+            num_indices,
         }
     }
 
@@ -216,7 +229,8 @@ impl State {
             //
             render_pass.set_pipeline(&self.render_pipeline); // 2
             render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
-            render_pass.draw(0..self.num_vertices, 0..1) // 3
+            render_pass.set_index_buffer(self.index_buffer.slice(..), IndexFormat::Uint16);
+            render_pass.draw_indexed(0..self.num_indices, 0, 0..1);
         }
         self.queue.submit(once(encoder.finish()));
         output.present();
