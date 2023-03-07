@@ -1,17 +1,24 @@
-use std::iter::once;
+use std::{iter::once, num::NonZeroU32};
 
 use std::path::PathBuf;
 
 use bytemuck::cast_slice;
+use image::{load_from_memory, GenericImageView};
 use wgpu::{
     util::{BufferInitDescriptor, DeviceExt},
     Backends, BlendComponent, BlendState, Buffer, BufferUsages, Color, ColorTargetState,
-    ColorWrites, CommandEncoderDescriptor, Device, DeviceDescriptor, Dx12Compiler, Features,
-    FragmentState, IndexFormat, Instance, InstanceDescriptor, Limits, MultisampleState, Operations,
-    PipelineLayoutDescriptor, PowerPreference, PrimitiveState, PrimitiveTopology, Queue,
-    RenderPassColorAttachment, RenderPassDescriptor, RenderPipeline, RenderPipelineDescriptor,
-    RequestAdapterOptions, ShaderModuleDescriptor, Surface, SurfaceConfiguration, SurfaceError,
-    TextureUsages, TextureViewDescriptor, VertexState,
+    ColorWrites, CommandEncoderDescriptor, Device, DeviceDescriptor, Dx12Compiler, Extent3d,
+    Features, FragmentState, ImageCopyTexture, ImageDataLayout, IndexFormat, Instance,
+    InstanceDescriptor, Limits, MultisampleState, Operations, Origin3d, PipelineLayoutDescriptor,
+    PowerPreference, PrimitiveState, PrimitiveTopology, Queue, RenderPassColorAttachment,
+    RenderPassDescriptor, RenderPipeline, RenderPipelineDescriptor, RequestAdapterOptions,
+    ShaderModuleDescriptor, Surface, SurfaceConfiguration, SurfaceError, TextureDescriptor,
+    TextureDimension, TextureFormat, TextureUsages, TextureViewDescriptor, VertexState,
+};
+use wgpu::{
+    AddressMode, BindGroup, BindGroupDescriptor, BindGroupEntry, BindGroupLayoutDescriptor,
+    BindGroupLayoutEntry, BindingResource, BindingType, FilterMode, SamplerDescriptor,
+    ShaderStages, TextureSampleType, TextureViewDimension,
 };
 
 use winit::{
@@ -38,6 +45,8 @@ pub struct State {
     // alt-4
     index_buffer: Buffer,
     num_indices: u32,
+    // alt-5
+    diffuse_bind_group: BindGroup,
 }
 
 impl State {
@@ -159,6 +168,98 @@ impl State {
         });
         let num_indices = INDICES.len() as u32;
 
+        // ----- CHANGES -----
+        let diffuse_bytes = include_bytes!(r"assets\typescript.png");
+        let diffuse_image = load_from_memory(diffuse_bytes).unwrap();
+        let diffuse_rgba = diffuse_image.to_rgba8();
+
+        let dimensions = diffuse_image.dimensions();
+
+        let texture_size = Extent3d {
+            width: dimensions.0,
+            height: dimensions.1,
+            depth_or_array_layers: 1,
+        };
+
+        let diffuse_texture = device.create_texture(&TextureDescriptor {
+            label: Some("Diffuse Texture"),
+            size: texture_size, // stored as 3d representing as 2d
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: TextureDimension::D2,
+            format: TextureFormat::Rgba8UnormSrgb, // most images stored using sRGB
+            usage: TextureUsages::TEXTURE_BINDING | TextureUsages::COPY_DST,
+            view_formats: &[], // Usage others than Rgba8UnormSrgb is not supperted by WebGL2 backend
+        });
+
+        // ----- Load data into a texture -----
+        // where to copy gpu data
+        queue.write_texture(
+            ImageCopyTexture {
+                texture: &diffuse_texture,
+                mip_level: 0,
+                origin: Origin3d::ZERO,
+                aspect: wgpu::TextureAspect::All,
+            },
+            &diffuse_rgba, // the actual pixel data
+            ImageDataLayout {
+                offset: 0,
+                bytes_per_row: NonZeroU32::new(4 * dimensions.0),
+                rows_per_image: NonZeroU32::new(dimensions.1),
+            },
+            texture_size,
+        );
+
+        let diffuse_texture_view = diffuse_texture.create_view(&TextureViewDescriptor::default());
+        let diffuse_sampler = device.create_sampler(&SamplerDescriptor {
+            label: Some("Diffuse Sampler"),
+            address_mode_u: AddressMode::ClampToEdge,
+            address_mode_v: AddressMode::ClampToEdge,
+            address_mode_w: AddressMode::ClampToEdge,
+            mag_filter: FilterMode::Linear,
+            min_filter: FilterMode::Nearest,
+            mipmap_filter: FilterMode::Nearest,
+            ..Default::default()
+        });
+
+        let texture_bind_group_layout =
+            device.create_bind_group_layout(&BindGroupLayoutDescriptor {
+                label: Some("Texture Bind Group Layout"),
+                entries: &[
+                    BindGroupLayoutEntry {
+                        binding: 0,
+                        visibility: ShaderStages::FRAGMENT,
+                        ty: BindingType::Texture {
+                            sample_type: TextureSampleType::Float { filterable: true },
+                            view_dimension: TextureViewDimension::D2,
+                            multisampled: false,
+                        },
+                        count: None,
+                    },
+                    BindGroupLayoutEntry {
+                        binding: 1,
+                        visibility: ShaderStages::FRAGMENT,
+                        ty: BindingType::Sampler(wgpu::SamplerBindingType::Filtering), // match filterable field icorresponding to the first entries index
+                        count: None,
+                    },
+                ],
+            });
+
+        let diffuse_bind_group = device.create_bind_group(&BindGroupDescriptor {
+            label: Some("Diffuse Bind Group"),
+            layout: &texture_bind_group_layout,
+            entries: &[
+                BindGroupEntry {
+                    binding: 0,
+                    resource: BindingResource::TextureView(&diffuse_texture_view),
+                },
+                BindGroupEntry {
+                    binding: 1,
+                    resource: BindingResource::Sampler(&diffuse_sampler),
+                },
+            ],
+        });
+
         Self {
             surface,
             device,
@@ -173,6 +274,8 @@ impl State {
             num_vertices,
             index_buffer,
             num_indices,
+            //
+            diffuse_bind_group,
         }
     }
 
@@ -228,6 +331,7 @@ impl State {
             });
             //
             render_pass.set_pipeline(&self.render_pipeline); // 2
+            render_pass.set_bind_group(0, &self.diffuse_bind_group, &[]);
             render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
             render_pass.set_index_buffer(self.index_buffer.slice(..), IndexFormat::Uint16);
             render_pass.draw_indexed(0..self.num_indices, 0, 0..1);
@@ -261,7 +365,7 @@ impl State {
                     Ok(_) => {}
                     Err(SurfaceError::Lost | SurfaceError::Outdated) => state.resize(state.size),
                     Err(SurfaceError::OutOfMemory) => *control_flow = ControlFlow::Exit,
-                    Err(SurfaceError::Timeout) => println!("Surface timeout"),
+                    Err(SurfaceError::Timeout) => println!("Surface Timeout"),
                 }
             }
             Event::MainEventsCleared => {
