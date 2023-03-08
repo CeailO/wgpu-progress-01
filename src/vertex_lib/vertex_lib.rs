@@ -16,7 +16,7 @@ pub struct Vertex {
 // <----- CHANGES ----->
 // vertex as copy
 // vertices coordinate counter clockwise
-// Removing duplicate vertexs
+// removing duplicate vertices
 pub const VERTICES: &[Vertex] = &[
     Vertex {
         position: [-0.0868241, 0.49240386, 0.0],
@@ -56,7 +56,7 @@ pub const VERTICES: &[Vertex] = &[
     }, // E
 ];
 
-// Create matrices for shortest path (adjencency) in between the polygonated vertex
+// create matrices for shortest path (adjencency) in between the polygonated vertex
 pub const INDICES: &[u16] = &[0, 1, 4, 1, 2, 4, 2, 3, 4];
 
 impl Vertex {
